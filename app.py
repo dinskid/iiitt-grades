@@ -7,14 +7,51 @@ from flask import Flask, redirect, request, url_for, render_template
 from oauthlib.oauth2 import WebApplicationClient
 import requests
 
-grades = open('./grades.csv').readlines()
-grades = grades[1:]
+# Load grades into memory
+grades = [[None, None, None, None], [None, None, None, None]]
+
+grades[0][0] = open('./cse19.csv').readlines()
+grades[0][1] = open('./cse18.csv').readlines()
+grades[0][2] = open('./cse17.csv').readlines()
+grades[0][3] = open('./cse16.csv').readlines()
+grades[1][0] = open('./ece19.csv').readlines()
+grades[1][1] = open('./ece18.csv').readlines()
+grades[1][2] = open('./ece17.csv').readlines()
+grades[1][3] = open('./ece16.csv').readlines()
 
 results = {}
 for person in grades:
     fields = person.strip().split(',')
     roll, email = fields[0], fields[1]
     results[email] = fields[2:]
+
+def fetch_results(branch, year, email):
+    '''
+    Input format:
+    branch: String (CSE|ECE)
+    year: int (19|18|17|16)
+    email: String (college given email address)
+
+    Output:
+    results: Dict (with sub code as key and grade as value)
+    Also, passed, failed are part of results
+    '''
+    results = {}
+    br = -1
+    yr = 19-year
+    email_row = 1
+    if branch == 'C':
+        #  grades[0]
+        br = 0
+    else:
+        #  grades[1]
+        br = 1
+    for row in grades[br][yr]:
+        if row.strip().split(',')[email_row] == email:
+            for i in range(4, len(header)-7):
+                results[header[i]] = row[i]
+
+    return results
 
 # Configuration
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
@@ -36,19 +73,12 @@ user = {
     'name': '',
     'rollno': '',
     'email': '',
+    'branch': '',
 }
 
 @app.route('/')
 def index():
-    return render_template('home.html', logged_in=logged_in)
-#  if logged_in:
-#  return (
-#  '<a class="button" href="/getresults">Download results</a>'
-#  '<br />'
-#  '<a class="button" href="/logout">Logout</a>'
-#  )
-#  else:
-#  return '<a href="/login">Login</a>'
+    return render_template('home.html', logged_in=logged_in, user=user)
 
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
@@ -90,10 +120,11 @@ def callback():
     userinfo_endpoint = google_provider_cfg['userinfo_endpoint']
     uri, headers, body = client.add_token(userinfo_endpoint)
     userinfo_response = requests.get(uri, headers=headers, data=body)
+    print(userinfo_response.json())
     if userinfo_response.json().get('email_verified'):
         unique_id = userinfo_response.json()['sub']
         email = userinfo_response.json()['email']
-        name = userinfo_response.json()['given_name']
+        name = userinfo_response.json()['name']
     else:
         return "User email not verified", 400
 
@@ -101,18 +132,26 @@ def callback():
     logged_in = True
     user['name'] = name
     user['email'] = email
+    if email.split('@')[0][-1] == 'c':
+        user['branch'] = 'CSE'
+    else:
+        user['branch'] = 'ECE'
     return redirect(url_for('index'))
 
 @app.route('/getresults')
 def getresults():
     if logged_in:
-        result = results.get(user['email'])
-        if not result:
+        front, rear = user['email'].split('@')
+        if rear != 'iiitt.ac.in':
             # means they logged in from some other mail id
-            return '<p>Please login with your institue mail id</p>'
-        return (
-            '<p>{}</p>'.format(result)
-        )
+            return (
+                '<p>Please login with your institue mail id</p>'
+                '<a href="/logout" class="btn btn-primary">Logout</a>'
+            )
+        year = int(front[-2:])
+        branch = front[-3]
+        results = fetch_results(branch.upper(), year, user['email'])
+        return render_template('results.html', user=user, results=results)
     else:
         return redirect(url_for('index'))
 
