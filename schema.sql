@@ -1,5 +1,4 @@
-CREATE TABLE user (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
+CREATE TABLE results (
   email TEXT UNIQUE NOT NULL,
-);
+  file_name TEXT UNIQUE NOT NULL,
+)

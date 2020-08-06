@@ -31,3 +31,24 @@ class User(UserMixin):
             (id_, name, email),
         )
         db.commit()
+
+    @staticmethod
+    def getPDF(user_email):
+        db = get_db()
+        user = db.execute(
+            "SELECT * FROM results WHERE email = ?", (user_email,)
+        ).fetchone()
+        if not user:
+            return None
+
+        print(user)
+
+    @staticmethod
+    def createPDF(user_email, pdf_name):
+        db = get_db()
+        db.execute(
+            "INSERT INTO results (email, pdf_name) "
+            "VALUES (?, ?)",
+            (user_email, pdf_name)
+        )
+        db.commit()
