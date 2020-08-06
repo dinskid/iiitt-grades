@@ -20,10 +20,6 @@ grades[1][2] = open('./ece17.csv').readlines()
 grades[1][3] = open('./ece16.csv').readlines()
 
 results = {}
-for person in grades:
-    fields = person.strip().split(',')
-    roll, email = fields[0], fields[1]
-    results[email] = fields[2:]
 
 def fetch_results(branch, year, email):
     '''
@@ -39,17 +35,21 @@ def fetch_results(branch, year, email):
     results = {}
     br = -1
     yr = 19-year
-    email_row = 1
+    email_col = 1
     if branch == 'C':
         #  grades[0]
         br = 0
     else:
         #  grades[1]
         br = 1
+    header = grades[br][yr][0].strip().split(',')
     for row in grades[br][yr]:
-        if row.strip().split(',')[email_row] == email:
-            for i in range(4, len(header)-7):
-                results[header[i]] = row[i]
+        print(row)
+        if row.strip().split(',')[email_col] == email:
+            #  for i in range(4, len(header)):
+            for i in range(2, len(header)):
+                results[header[i]] = row.strip().split(',')[i]
+            return results
 
     return results
 
@@ -148,9 +148,12 @@ def getresults():
                 '<p>Please login with your institue mail id</p>'
                 '<a href="/logout" class="btn btn-primary">Logout</a>'
             )
-        year = int(front[-2:])
-        branch = front[-3]
+        year = int(front[-3:-1])
+        branch = front[-1]
         results = fetch_results(branch.upper(), year, user['email'])
+        print(results)
+        if (len(results) == 0):
+            return '<p>Error has occurred. Please contact the class coordinator</p>'
         return render_template('results.html', user=user, results=results)
     else:
         return redirect(url_for('index'))
