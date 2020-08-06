@@ -3,7 +3,7 @@ import json
 import os
 
 # Third-party libraries
-from flask import Flask, redirect, request, url_for
+from flask import Flask, redirect, request, url_for, render_template
 from oauthlib.oauth2 import WebApplicationClient
 import requests
 
@@ -18,7 +18,6 @@ for person in grades:
 
 # Configuration
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
-print('GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID)
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None)
 GOOGLE_DISCOVERY_URL = (
     "https://accounts.google.com/.well-known/openid-configuration"
@@ -38,16 +37,18 @@ user = {
     'rollno': '',
     'email': '',
 }
+
 @app.route('/')
 def index():
-    if logged_in:
-        return (
-            '<a class="button" href="/getresults">Download results</a>'
-            '<br />'
-            '<a class="button" href="/logout">Logout</a>'
-        )
-    else:
-        return '<a href="/login">Login</a>'
+    return render_template('home.html', logged_in=logged_in)
+#  if logged_in:
+#  return (
+#  '<a class="button" href="/getresults">Download results</a>'
+#  '<br />'
+#  '<a class="button" href="/logout">Logout</a>'
+#  )
+#  else:
+#  return '<a href="/login">Login</a>'
 
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
@@ -89,7 +90,6 @@ def callback():
     userinfo_endpoint = google_provider_cfg['userinfo_endpoint']
     uri, headers, body = client.add_token(userinfo_endpoint)
     userinfo_response = requests.get(uri, headers=headers, data=body)
-    print(userinfo_response.json())
     if userinfo_response.json().get('email_verified'):
         unique_id = userinfo_response.json()['sub']
         email = userinfo_response.json()['email']
@@ -109,7 +109,7 @@ def getresults():
         result = results.get(user['email'])
         if not result:
             # means they logged in from some other mail id
-            return '<p>Please login with your institue mail id'
+            return '<p>Please login with your institue mail id</p>'
         return (
             '<p>{}</p>'.format(result)
         )
