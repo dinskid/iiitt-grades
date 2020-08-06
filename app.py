@@ -7,6 +7,15 @@ from flask import Flask, redirect, request, url_for
 from oauthlib.oauth2 import WebApplicationClient
 import requests
 
+grades = open('./grades.csv').readlines()
+grades = grades[1:]
+
+results = {}
+for person in grades:
+    fields = person.strip().split(',')
+    roll, email = fields[0], fields[1]
+    results[email] = fields[2:]
+
 # Configuration
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 print('GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID)
@@ -25,9 +34,9 @@ client = WebApplicationClient(GOOGLE_CLIENT_ID)
 # To check if somebody is logged in or not
 logged_in = False
 user = {
-    name: '',
-    rollno: '',
-    email: '',
+    'name': '',
+    'rollno': '',
+    'email': '',
 }
 @app.route('/')
 def index():
@@ -88,10 +97,33 @@ def callback():
     else:
         return "User email not verified", 400
 
-    global logged_in
+    global logged_in, user
     logged_in = True
+    user['name'] = name
+    user['email'] = email
     return redirect(url_for('index'))
 
+@app.route('/getresults')
+def getresults():
+    if logged_in:
+        result = results.get(user['email'])
+        if not result:
+            # means they logged in from some other mail id
+            return '<p>Please login with your institue mail id'
+        return (
+            '<p>{}</p>'.format(result)
+        )
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/logout')
+def logout():
+    global logged_in, user
+    for field in user:
+        user[field] = ''
+    logged_in = False
+
+    return redirect(url_for('index'))
 
 if __name__ == "__main__":
     app.run(ssl_context="adhoc")
