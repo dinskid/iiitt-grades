@@ -1,12 +1,21 @@
 # Python standard libraries
 import json
 import os
+from datetime import date
 
 # Third-party libraries
 from flask import Flask, redirect, request, url_for, render_template
 from oauthlib.oauth2 import WebApplicationClient
 import requests
 
+'''
+grades is indexed this way: grades[Branch][Year]
+grades[Branch][Year] -> Python list of csv strings
+
+note: this could be obsolete if lot of records are there
+
+TODO: Query from db instead of reading from file into memory
+'''
 # Load grades into memory
 grades = [[None, None, None, None], [None, None, None, None]]
 
@@ -34,8 +43,14 @@ def fetch_results(branch, year, email):
     '''
     results = {}
     br = -1
-    yr = 19-year
-    email_col = 1
+
+    today = date.today()
+    yr = today.year%100
+    if today.month >= 6:
+        yr-=1
+    yr -= year
+    email_col = 1 # this has to be manually updated according to the dataset
+    sub_start_id = 2 # this is where the grades start
     if branch == 'C':
         #  grades[0]
         br = 0
@@ -44,10 +59,8 @@ def fetch_results(branch, year, email):
         br = 1
     header = grades[br][yr][0].strip().split(',')
     for row in grades[br][yr]:
-        print(row)
         if row.strip().split(',')[email_col] == email:
-            #  for i in range(4, len(header)):
-            for i in range(2, len(header)):
+            for i in range(sub_start_id, len(header)):
                 results[header[i]] = row.strip().split(',')[i]
             return results
 
@@ -120,7 +133,6 @@ def callback():
     userinfo_endpoint = google_provider_cfg['userinfo_endpoint']
     uri, headers, body = client.add_token(userinfo_endpoint)
     userinfo_response = requests.get(uri, headers=headers, data=body)
-    print(userinfo_response.json())
     if userinfo_response.json().get('email_verified'):
         unique_id = userinfo_response.json()['sub']
         email = userinfo_response.json()['email']
@@ -142,18 +154,24 @@ def callback():
 def getresults():
     if logged_in:
         front, rear = user['email'].split('@')
-        if rear != 'iiitt.ac.in':
+        email2roll = open('./email_roll.csv').readlines()
+        for item in email2roll:
+            em, rno = item.split(',')
+            if em == user['email']:
+                user['rollno'] = rno
+                break
+
+        if user['rollno'] == '':
             # means they logged in from some other mail id
             return (
                 '<p>Please login with your institue mail id</p>'
                 '<a href="/logout" class="btn btn-primary">Logout</a>'
             )
-        year = int(front[-3:-1])
-        branch = front[-1]
+        year = int(user['rollno'][3:5])
+        branch = user['rollno'][0].upper()
         results = fetch_results(branch.upper(), year, user['email'])
-        print(results)
         if (len(results) == 0):
-            return '<p>Error has occurred. Please contact the class coordinator</p>'
+            return '<h2>Error has occurred. Please contact the class coordinator</h2>'
         return render_template('results.html', user=user, results=results)
     else:
         return redirect(url_for('index'))
