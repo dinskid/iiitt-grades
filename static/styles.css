@@ -63,16 +63,34 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding-top: 2rem;
 }
 
 .results_table {
   width: 70%;
 }
 
+.results_table > tbody > tr > td {
+  padding: 0.2rem;
+  text-align: center;
+}
+
+.results_table > tbody > tr > th {
+  padding: 0.2rem;
+  text-align: center;
+}
+
 .med {
-  font-size: 2rem;
+  font-size: 1.7rem;
 }
 
 .sm-md {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
 }
+
+.info {
+  width: 70%;
+  margin-bottom: 1rem;
+}
+
+

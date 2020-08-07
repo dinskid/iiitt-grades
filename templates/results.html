@@ -25,9 +25,12 @@
 
 <body>
   <div class="container-fluid custom_container">
-    <div>
+    <div class="info">
       <span class="med">Name: </span>
       <span class="sm-md">{{ user['name'] }}</span>
+      <br />
+      <span class="med">Roll Number: </span>
+      <span class="sm-md">{{ user['rollno'] }}</span>
     </div>
     <table border='1' class="results_table">
       {% for subject in results %}
