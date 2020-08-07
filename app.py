@@ -191,6 +191,7 @@ def callback():
         # means they logged in from some other mail id
         return (
             '<h2>Please login with your institue mail id</h2>'
+            '<p>If you did login with your institue mail id, you must be a faculty and this portal is for students. If you think there is some problem and your results are missing, please contact the class coordinator or faculty advisor or member of Web Dev-IIITT</p>'
             '<a href="/logout" class="btn btn-primary">Logout</a>'
         )
     return redirect(url_for('index'))
@@ -205,6 +206,8 @@ def getresults():
             return (
                 '<h2>Error has occurred. Please contact the class coordinator</h2>'
                 '<h4>Your results were not found</h4>'
+                '<a href="/">Click here to go to home page</a>'
+                '<a href="/logout" class="btn btn-primary">Click here to Logout</a>'
             )
         return render_template('results.html', user=user, results=results)
     else:
@@ -217,6 +220,8 @@ def getsupplementary():
             return (
                 '<h2>Error has occurred. Please contact the class coordinator</h2>'
                 '<h4>Your results were not found</h4>'
+                '<a href="/">Click here to go to home page</a>'
+                '<a href="/logout" class="btn btn-primary">Click here to Logout</a>'
             )
         results = fetch_supplementary(user['rollno'])
         if len(results) == 0:
@@ -224,6 +229,7 @@ def getsupplementary():
                 '<h1>No results</h1>'
                 '<p>If you think there is some problem and your results are missing, please contact the class coordinator or faculty advisor</p>'
                 '<a href="/">Click here to go to home page</a>'
+                '<a href="/logout" class="btn btn-primary">Click here to Logout</a>'
             )
         return render_template('results.html', user=user, results=results)
     else:
